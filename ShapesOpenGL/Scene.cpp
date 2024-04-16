@@ -283,6 +283,7 @@ void Scene::Render()
         , cameraQuaternion.y
         , cameraQuaternion.z
         , cameraQuaternion.w);
+    ResourceManager::GetShader("raymarching").SetMatrix4("uView", view);
     ResourceManager::GetShader("raymarching").SetVector3f("uCameraPosition", cameraPos);
     ResourceManager::GetShader("raymarching").SetVector3f("uCameraFront", cameraFront);
 

@@ -1495,7 +1495,7 @@
     </None>
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
-    <None Include="shaders\raymarching.frag" />
     <None Include="shaders\raymarching.vert" />
+    <None Include="shaders\raymarching.frag" />
   </ItemGroup>
 </Project>
