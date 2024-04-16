@@ -3,7 +3,8 @@
 #define LIGHT_CHECKER  vec3(1., 0.8, 0.)
 #define DARK_CHECKER   vec3(0., 0.5, 0.)
 #define ZERO_CHECKER vec3(1., 0., 0.)
-#define SKY vec3(0., 0., 0.)
+#define SKY vec3(1., 1., 1.)
+//#define SKY vec3(0., 0., 0.)
 #define AA  2
 #define AAR 0.5
 
@@ -12,6 +13,8 @@
 #define MAX_STEPS 100
 #define MAX_DIST 100.
 #define CLOSENESS 0.01
+
+#define FOV float(1.2)
 
 out vec4 FragColor;
 
@@ -39,7 +42,8 @@ vec3 checker(in vec2 uv, in float size) {
     }
     vec2 f = floor(uv);
     float isLight = mod(f.x + f.y, 2.);
-    return mix(DARK_CHECKER, LIGHT_CHECKER, isLight);
+    //return mix(DARK_CHECKER, LIGHT_CHECKER, isLight);
+    return LIGHT_CHECKER;
 }
 
 vec2 planeSdf(in vec3 uv) {
@@ -47,28 +51,70 @@ vec2 planeSdf(in vec3 uv) {
 }
 
 vec2 ballSdf(in vec3 uv) {
-    uv.y /= 2.1;
-    vec3 ball = vec3(1., 0., 1.0);
-    float r = 2.1;
-    return vec2(length(uv - ball) - r, 2.);
+    uv.y /= 1;
+    vec3 ball = vec3(0., 0., 0.0);
+    float r = 1.;
+    return vec2(length(uv - ball) - r, 1.);
 }
+
+float sdBox( vec3 p, vec3 b )
+{
+  vec3 pos = vec3(3.0, 0.0, 0.0);
+  vec3 q = abs(p - pos) - b;
+  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+}
+
+
+float sdSphere( vec3 p, float s )
+{
+    vec3 pos = vec3(0.0, 0.0, 0.0);
+    return length(p - pos)-s;
+}
+
+float sdbEllipsoidV2( in vec3 p, in vec3 r )
+{
+    vec3 pos = vec3(1.0, 0.0, 0.0);
+    p -= pos;
+    float k1 = length(p/r);
+    float k2 = length(p/(r*r));
+    return k1*(k1-1.0)/k2;
+}
+
+float opIntersection( float d1, float d2 )
+{
+    return max(d1,d2);
+}
+
 
 // @return distance (x) and id(y)
 vec2 sceneSdf(in vec3 uv) {
-  vec2 p = planeSdf(uv);
+  //vec2 p = planeSdf(uv);
   vec2 b = ballSdf(uv);
-  if (b.x < p.x) {
-      return b;
-  }
-  return p;
-  // return b;
+  //if (b.x < p.x) {
+  //    return b;
+  //}
+  //return p;
+  return b;
+}
+
+float sdScene(in vec3 p)
+{
+    //float s = sdSphere(p, 1);
+    float e = sdbEllipsoidV2(p, vec3(2.0, 1.0, 1.0));
+    float b = sdBox(p, vec3(1.0, 1.0, 1.0));
+    float intersection = opIntersection(e, b);
+    return intersection;
+    if (e < b)
+        return e;
+    return b;
 }
 
 float rayMarch(vec3 origin, vec3 direction) {
     float dist = 0.;
     for(int i=0; i < MAX_STEPS; ++i) {
         vec3 ray = origin + direction * dist;
-        float step = sceneSdf(ray).x;
+        // float step = sceneSdf(ray).x;
+        float step = sdScene(ray);
         dist += step;
         if (step < CLOSENESS || dist > MAX_DIST) break;
     }
@@ -90,7 +136,7 @@ void main()
     //vec2 uv = (2.0 * gl_FragCoord.xy - uResolution.xy) / uResolution.y;
     vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
     vec3 eye = uCameraPosition;
-    vec3 projection = vec3(uv.x, uv.y, 1.0);
+    vec3 projection = vec3(uv.x, uv.y, FOV);
     vec3 target = uCameraPosition + uCameraFront;
     float roll = 0.0;
     // mat3 L = uView.xyz;
@@ -101,7 +147,7 @@ void main()
     float dist = rayMarch(ro, rd);
     vec3 ray = ro + rd * dist;
     float skyMix = smoothstep(MAX_DIST * 0.6, MAX_DIST * 0.8, dist);
-    vec3 color = checker(ray.xz, 2.0); //* smoothstep(16., 0., ray.y);
+    vec3 color = checker(ray.xz, 1.0); //* smoothstep(16., 0., ray.y);
     vec3 final = mix(color, SKY, skyMix);
     // vec3 col;
     // render(col, uv);

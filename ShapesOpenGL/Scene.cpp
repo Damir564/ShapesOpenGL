@@ -70,8 +70,8 @@ void Scene::Init()
     //    , glm::vec3(0.0f, 0.0f, 0.0f)
     //    , glm::vec4(1.0f, 1.0f, 0.0f, 1.0f))));
 
-    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(1.0f, 0.0f, 1.0f)
-        , glm::vec3(4.0f, 2.0f, 4.0f)
+    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(1.0f, 0.0f, 0.0f)
+        , glm::vec3(4.0f, 2.0f, 2.0f)
         // , glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f)
         , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
