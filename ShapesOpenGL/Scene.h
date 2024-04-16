@@ -6,6 +6,7 @@
 #include "utilities/VAO.h"
 #include "Cuboid.h"
 #include "Ellipsoid.h"
+#include "Quad.h"
 
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
@@ -47,11 +48,16 @@ public:
     // VAO* vao1Ptr;
     std::vector<VAO> vaoVector;
 
+    GLuint FBO;
+    GLuint framebufferTexture;
+    GLuint RBO;
+
     GLuint ellipsoidVao;
     GLuint ellipsoidVbo[2];
 
     std::vector<std::unique_ptr<Cuboid>> Cuboids;
     std::vector<std::unique_ptr<Ellipsoid>> Ellipsoids;
+    std::unique_ptr<Quad> ScreenQuad;
 
 	Scene(unsigned int width, unsigned int height);
     void Init();
@@ -70,6 +76,8 @@ private:
 
     bool _firstMouse = true;
     float _mouseWheelYOffset = 0.0f;
+
+    bool _raymarching = false;
     
     //float _lastMouseWheelYOffset = 0.0f;
     //float _deltaMouseWheelYOffset = 0.0f;

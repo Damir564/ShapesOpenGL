@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
+//#include <memory>
 #include "utilities/EBO.h"
 #include <iostream>
 
@@ -17,7 +18,7 @@ Ellipsoid::Ellipsoid(Transform transform, glm::vec4 color)
 
 Ellipsoid::Ellipsoid(glm::vec3 position
     , glm::vec3 size
-    , glm::vec3 rotation
+    , glm::quat rotation
     , glm::vec4 color)
     : Shape(position, size, rotation, color)
 {
@@ -60,7 +61,8 @@ void Ellipsoid::Init()
             // ellipsoidTextureCoords.push_back(glm::vec2(U, V));
         }
     }
-
+    
+    collider = std::make_unique<MeshCollider>(MeshCollider(ellipsoidVertices));
     // Now generate the index buffer
     std::vector<GLuint> ellipsoidIndicies;
 
@@ -84,7 +86,7 @@ void Ellipsoid::Init()
     vao->Bind();
 
     VBO vbo((GLfloat*)ellipsoidVertices.data(), ellipsoidVertices.size() * sizeof(glm::vec3));
-    vao->LinkVBO(vbo, 0);
+    vao->LinkVBO(vbo, 0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
     EBO ebo(ellipsoidIndicies.data(), ellipsoidIndicies.size() * sizeof(GLuint));
 
@@ -97,9 +99,13 @@ void Ellipsoid::Draw(Shader& shader) const
 {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, transform.Position); 
-
+    model = glm::rotate(model, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
     model = glm::scale(model, transform.Size);
-
+    //model *= glm::mat4_cast(transform.Quaternion);
+    // collider->ApplyModelMat4(model);
+    collider->ApplyTransform(transform);
     shader.SetMatrix4("model", model);
     shader.SetVector4f("color", color);
 

@@ -49,7 +49,7 @@ void Cuboid::Init()
     // Generate & bind VBO
     VBO vbo(cuboidVertices, sizeof(cuboidVertices));
     // Link VBO to the VAO
-    vao->LinkVBO(vbo, 0);
+    vao->LinkVBO(vbo, 0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     // Generate & bind EBO
     EBO ebo(cuboidIndices, sizeof(cuboidIndices));
 
@@ -71,11 +71,14 @@ void Cuboid::Init()
 void Cuboid::Draw(Shader& shader) const
 {
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, transform.Position);  // first translate (transformations are: scale happens first, then rotation, and then final translation happens; reversed order)
-
-    
+    model = glm::translate(model, transform.Position);  // first translate (transformations are: scale happens first, then rotation, and then final translation happens; reversed order)   
+    // model = glm::rotate(model, transform.Rotation);
+    model = glm::rotate(model, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
     model = glm::scale(model, transform.Size); // last scale
-    
+    //collider->ApplyModelMat4(model);
+    collider->ApplyTransform(transform);
 
     shader.SetMatrix4("model", model);
     shader.SetVector4f("color", color);

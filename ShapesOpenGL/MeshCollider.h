@@ -24,11 +24,25 @@ public:
 		vertices = std::vector<glm::vec3>(rawVertices.size() / 3);
 	}
 
+	MeshCollider(const std::vector<glm::vec3>& rawVertices)
+	{
+		m_normalized_vertices = rawVertices;
+		vertices = std::vector<glm::vec3>(rawVertices.size());
+	}
+
 	void ApplyTransform(const Transform& transform)
 	{
 		for (int i = 0; i != vertices.size(); ++i)
 		{
 			vertices[i] = m_normalized_vertices[i] * transform.Size + transform.Position;
+		}
+	}
+
+	void ApplyModelMat4(const glm::mat4& model)
+	{
+		for (int i = 0; i != vertices.size(); ++i)
+		{
+			vertices[i] = model * glm::vec4(vertices[i], 1.0f);
 		}
 	}
 

@@ -26,22 +26,41 @@ Scene::Scene(unsigned int width, unsigned int height) : Width(width), Height(hei
 
 void Scene::Init()
 {
+    
+
+
     ResourceManager::LoadShader("shaders/shader.vert", "shaders/shader.frag", nullptr, "shader");
+    ResourceManager::LoadShader("shaders/raymarching.vert", "shaders/raymarching.frag", nullptr, "raymarching");
 
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 
         static_cast<float>(this->Width) / static_cast<float>(this->Height), 
         0.1f, 100.0f);
     ResourceManager::GetShader("shader").Use();
     ResourceManager::GetShader("shader").SetMatrix4("projection", projection);
+    //ResourceManager::GetShader("shader").SetVector2f("u_resolution", Width, Height);
 
-    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, 0.0f) 
-        , glm::vec3(1.0f, 1.0f, 1.0f)
-        , glm::vec3(0.0f, 0.0f, 0.0f)
-        , glm::vec4(1.0f, 0.0f, 0.0f, 1.0f))));
+    ResourceManager::GetShader("raymarching").Use();
+    ResourceManager::GetShader("raymarching").SetVector2f("uResolution", Width, Height);
+
+    
+
+    //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, 0.0f)
+    //    , glm::vec3(1.0f, 1.0f, 1.0f)
+    //    , glm::vec3(0.0f, 0.0f, 0.0f)
+    //    , glm::vec4(1.0f, 0.0f, 0.0f, 1.0f))));
     Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(3.0f, 0.0f, 0.0f)
         , glm::vec3(2.0f, 2.0f, 2.0f)
         , glm::vec3(0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
+
+    //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, 0.0f) 
+    //    , glm::vec3(2.0f, 2.0f, 2.0f)
+    //    , glm::vec3(0.0f, 0.0f, 0.0f)
+    //    , glm::vec4(1.0f, 0.0f, 0.0f, 1.0f))));
+    //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(2.0f, 0.0f, 0.0f)
+    //    , glm::vec3(2.0f, 2.0f, 2.0f)
+    //    , glm::vec3(0.0f, 0.0f, 0.0f)
+    //    , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
     //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, 2.0f)
     //    , glm::vec3(2.0f, 2.0f, 2.0f)
     //    , glm::vec3(0.0f, 0.0f, 0.0f)
@@ -51,10 +70,36 @@ void Scene::Init()
     //    , glm::vec3(0.0f, 0.0f, 0.0f)
     //    , glm::vec4(1.0f, 1.0f, 0.0f, 1.0f))));
 
-    //Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(1.0f, 0.0f, 1.0f)
-    //    , glm::vec3(4.0f, 2.0f, 4.0f)
-    //    , glm::vec3(0.0f, 0.0f, 0.0f)
-    //    , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
+    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(1.0f, 0.0f, 1.0f)
+        , glm::vec3(4.0f, 2.0f, 4.0f)
+        // , glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f)
+        , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
+        , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
+
+    glGenFramebuffers(1, &FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+
+    glGenTextures(1, &framebufferTexture);
+    glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebufferTexture, 0);
+
+
+    glGenRenderbuffers(1, &RBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, Width, Height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+    auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "framebuffer error" << fboStatus << std::endl;
+
+    ScreenQuad = std::make_unique<Quad>(Quad());
 }
 
 void Scene::ProcessInput(float dt)
@@ -129,6 +174,7 @@ void Scene::ProcessInput(float dt)
         direction.y = sin(glm::radians(cameraPitch));
         direction.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
         cameraFront = glm::normalize(direction);
+        std::cout << "X: " << cameraFront.x << " Y: " << cameraFront.y << " Z: " << cameraFront.z << "\n";
 
         
     }
@@ -146,34 +192,36 @@ void Scene::Update(float dt)
 void Scene::DoCollisions()
 {
     for (const auto& a : Cuboids)
+    {
         for (const auto& b : Cuboids)
         {
             if (a == b)
                 continue;
 
-            a->collider->ApplyTransform(a->transform);
-            b->collider->ApplyTransform(b->transform);
 
-            if (GJK(*a->collider, *b->collider))
-                std::cout << "Yessss!" << '\n';
-            else
-                std::cout << "____________No:(" << '\n';
-            //std::cout << "A: " << '\n';
-            //for (const auto& vertex : a->collider->vertices)
-            //{
-            //    std::cout << "x = " << vertex.x << "; y = " << vertex.y << "; z = " << vertex.z << '\n';
-            //}
-            //std::cout << "B: " << '\n';
-            //for (const auto& vertex : b->collider->vertices)
-            //{
-            //    std::cout << "x = " << vertex.x << "; y = " << vertex.y << "; z = " << vertex.z << '\n';
-            //}
-            //std::cout << '\n';
         }
+        for (const auto& b : Ellipsoids)
+        {
+            //if (GJK(*a->collider, *b->collider))
+            //    std::cout << "Yessss!" << '\n';
+            //else
+            //    std::cout << "____________No:(" << '\n';
+        }
+    }
 }
 
 void Scene::Render()
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    
+
+    //for (const auto& a : Cuboids)
+    //{
+    //    a->collider->ApplyTransform(a->transform);
+    //}
     ResourceManager::GetShader("shader").Use();
     glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     // glm::mat4 model = glm::mat4(1.0f);
@@ -199,7 +247,7 @@ void Scene::Render()
     //vaoVector[0].Bind();
     //glDrawElements(GL_TRIANGLES, 6 * 2 * 3, GL_UNSIGNED_INT, nullptr);
     //vaoVector[0].Unbind();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
     for (std::unique_ptr<Ellipsoid> const& ellipsoid : Ellipsoids)
     {
         if (ellipsoid->isWired)
@@ -217,9 +265,26 @@ void Scene::Render()
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         if (cuboid->isDrawn)
             cuboid->Draw(ResourceManager::GetShader("shader").Use());
-        
     }
-  
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    //if (_raymarching)
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // std::cout << "X: " << cameraYaw << " Y: " << cameraPitch << "\n";
+    ScreenQuad->Draw(ResourceManager::GetShader("raymarching").Use(), FBO);
+    //ResourceManager::GetShader("raymarching").SetFloat("u_time", glfwGetTime());
+    // ResourceManager::GetShader("raymarching").SetVector3f("uResolution", cameraPos);
+    // std::cout << "X: " << cameraPos.x << " Y: " << cameraPos.y << "Z: " << cameraPos.z << "\n";
+    glm::quat cameraQuaternion = glm::vec3(0, 0, 0);
+    cameraQuaternion = glm::rotate(cameraQuaternion, glm::radians(cameraPitch), glm::vec3(0, 1, 0));
+    cameraQuaternion = glm::rotate(cameraQuaternion, glm::radians(cameraYaw), glm::vec3(1, 0, 0));
+    ResourceManager::GetShader("raymarching").SetVector4f("uCameraQuaternion"
+        , cameraQuaternion.x
+        , cameraQuaternion.y
+        , cameraQuaternion.z
+        , cameraQuaternion.w);
+    ResourceManager::GetShader("raymarching").SetVector3f("uCameraPosition", cameraPos);
+    ResourceManager::GetShader("raymarching").SetVector3f("uCameraFront", cameraFront);
 
     
 
@@ -235,6 +300,7 @@ void Scene::UI()
     ImGui::Begin("My name is window, ImGUI window");
     // Text that appears in the window
     ImGui::Text("Hello there adventurer!");
+    ImGui::Checkbox("Raymarching", &_raymarching);
     // Checkbox that appears in the window
     for (size_t i = 0; i != Cuboids.size(); ++i)
     {
@@ -245,6 +311,12 @@ void Scene::UI()
         ImGui::SliderFloat(std::format("position x{0}", idSuffix).c_str(), &Cuboids[i]->transform.Position.x, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("position y{0}", idSuffix).c_str(), &Cuboids[i]->transform.Position.y, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("position z{0}", idSuffix).c_str(), &Cuboids[i]->transform.Position.z, -20.0f, 20.0f);
+        ImGui::SliderFloat(std::format("size x{0}", idSuffix).c_str(), &Cuboids[i]->transform.Size.x, 0.0f, 20.0f);
+        ImGui::SliderFloat(std::format("size y{0}", idSuffix).c_str(), &Cuboids[i]->transform.Size.y, 0.0f, 20.0f);
+        ImGui::SliderFloat(std::format("size z{0}", idSuffix).c_str(), &Cuboids[i]->transform.Size.z, 0.0f, 20.0f);
+        ImGui::SliderFloat(std::format("Rotation x{0}", idSuffix).c_str(), &Cuboids[i]->transform.Rotation.x, -180.0f, 180.0f);
+        ImGui::SliderFloat(std::format("Rotation y{0}", idSuffix).c_str(), &Cuboids[i]->transform.Rotation.y, -180.0f, 180.0f);
+        ImGui::SliderFloat(std::format("Rotation z{0}", idSuffix).c_str(), &Cuboids[i]->transform.Rotation.z, -180.0f, 180.0f);
     }
     // Slider that appears in the window
     for (size_t i = 0; i != Ellipsoids.size(); ++i)
@@ -256,9 +328,16 @@ void Scene::UI()
         ImGui::SliderFloat(std::format("position x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Position.x, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("position y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Position.y, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("position z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Position.z, -20.0f, 20.0f);
-        ImGui::SliderFloat(std::format("size x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.x, -20.0f, 20.0f);
-        ImGui::SliderFloat(std::format("size y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.y, -20.0f, 20.0f);
-        ImGui::SliderFloat(std::format("size z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.z, -20.0f, 20.0f);
+        ImGui::SliderFloat(std::format("size x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.x, 0.0f, 20.0f);
+        ImGui::SliderFloat(std::format("size y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.y, 0.0f, 20.0f);
+        ImGui::SliderFloat(std::format("size z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.z, 0.0f, 20.0f);
+        ImGui::SliderFloat(std::format("Rotation x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Rotation.x, -180.0f, 180.0f);
+        ImGui::SliderFloat(std::format("Rotation y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Rotation.y, -180.0f, 180.0f);
+        ImGui::SliderFloat(std::format("Rotation z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Rotation.z, -180.0f, 180.0f);
+        //ImGui::SliderFloat(std::format("quaternion w{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Quaternion.w, -1.0f, 1.0f);
+        //ImGui::SliderFloat(std::format("quaternion x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Quaternion.x, -1.0f, 1.0f);
+        //ImGui::SliderFloat(std::format("quaternion y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Quaternion.y, -1.0f, 1.0f);
+        //ImGui::SliderFloat(std::format("quaternion z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Quaternion.z, -1.0f, 1.0f);
     }
     //// Fancy color editor that appears in the window
     //ImGui::ColorEdit4("Color", color);

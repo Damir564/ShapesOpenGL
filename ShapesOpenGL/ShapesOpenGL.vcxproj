@@ -140,6 +140,7 @@
     <ClCompile Include="GJK.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="MeshCollider.cpp" />
+    <ClCompile Include="Quad.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="sdk\imgui\imgui.cpp" />
     <ClCompile Include="sdk\imgui\imgui_demo.cpp" />
@@ -153,6 +154,7 @@
     <ClCompile Include="program.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="Simplex.cpp" />
+    <ClCompile Include="SsboManager.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="utilities\color_renderer.cpp" />
     <ClCompile Include="Cuboid.cpp" />
@@ -171,6 +173,7 @@
     <ClInclude Include="GJK.h" />
     <ClInclude Include="MeshCollider.h" />
     <ClInclude Include="program.h" />
+    <ClInclude Include="Quad.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="sdk\imgui\imconfig.h" />
     <ClInclude Include="sdk\imgui\imgui.h" />
@@ -474,6 +477,7 @@
     <ClInclude Include="sdk\include\KHR\khrplatform.h" />
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Simplex.h" />
+    <ClInclude Include="SsboManager.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="utilities\color_renderer.h" />
     <ClInclude Include="Cuboid.h" />
@@ -627,6 +631,8 @@
     <None Include="sdk\include\glm\gtx\wrap.inl" />
     <None Include="shaders\color.frag" />
     <None Include="shaders\color.vert" />
+    <None Include="shaders\raymarching.frag" />
+    <None Include="shaders\raymarching.vert" />
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
     <None Include="shaders\sprite.frag" />
