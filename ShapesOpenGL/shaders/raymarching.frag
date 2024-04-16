@@ -163,3 +163,15 @@ void main()
 
 
 // https://www.shadertoy.com/view/3tVcDz
+
+// create struct Cuboid
+// create struct Ellipsoid
+// sdScene function reimplement with loop
+// return volume value from the shader
+// get the center of intersection volume && color it
+// * draw outlines of shapes && implement distance effect
+// * draw meshes on shapes
+
+//CPU:
+// reimplement support functions for ellipsoid.
+// set bool to draw intersection on shader and get volume values

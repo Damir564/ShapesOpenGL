@@ -202,7 +202,7 @@ void Scene::DoCollisions()
         }
         for (const auto& b : Ellipsoids)
         {
-            //if (GJK(*a->collider, *b->collider))
+            // if (GJK(*a->collider, *b->collider))
             //    std::cout << "Yessss!" << '\n';
             //else
             //    std::cout << "____________No:(" << '\n';
