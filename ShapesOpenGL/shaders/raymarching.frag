@@ -88,13 +88,13 @@ float opIntersection( float d1, float d2 )
 
 // @return distance (x) and id(y)
 vec2 sceneSdf(in vec3 uv) {
-  //vec2 p = planeSdf(uv);
-  vec2 b = ballSdf(uv);
+  vec2 p = planeSdf(uv);
+  //vec2 b = ballSdf(uv);
   //if (b.x < p.x) {
   //    return b;
   //}
-  //return p;
-  return b;
+  return p;
+  // return b;
 }
 
 float sdScene(in vec3 p)
@@ -103,7 +103,7 @@ float sdScene(in vec3 p)
     float e = sdbEllipsoidV2(p, vec3(2.0, 1.0, 1.0));
     float b = sdBox(p, vec3(1.0, 1.0, 1.0));
     float intersection = opIntersection(e, b);
-    return intersection;
+    //return intersection;
     if (e < b)
         return e;
     return b;
@@ -136,7 +136,8 @@ void main()
     //vec2 uv = (2.0 * gl_FragCoord.xy - uResolution.xy) / uResolution.y;
     vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
     vec3 eye = uCameraPosition;
-    vec3 projection = vec3(uv.x, uv.y, FOV);
+    // float d = 1.0 / tan(radians(40.0f));
+    vec3 projection = normalize(vec3(uv.x, uv.y, FOV));
     vec3 target = uCameraPosition + uCameraFront;
     float roll = 0.0;
     // mat3 L = uView.xyz;

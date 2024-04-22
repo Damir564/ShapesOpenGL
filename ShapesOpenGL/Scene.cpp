@@ -26,17 +26,34 @@ Scene::Scene(unsigned int width, unsigned int height) : Width(width), Height(hei
 
 void Scene::Init()
 {
-    
-
-
     ResourceManager::LoadShader("shaders/shader.vert", "shaders/shader.frag", nullptr, "shader");
     ResourceManager::LoadShader("shaders/raymarching.vert", "shaders/raymarching.frag", nullptr, "raymarching");
+
+    GLuint uniformBlockIndex = 
+        glGetUniformBlockIndex(ResourceManager::GetShader("shader").ID, "Matrices");
+    
+    glUniformBlockBinding(ResourceManager::GetShader("shader").ID
+        , uniformBlockIndex
+        , 0);
+
+    GLuint uboMatrices;
+    glGenBuffers(1, &uboMatrices);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 1 * sizeof(glm::mat4));
 
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 
         static_cast<float>(this->Width) / static_cast<float>(this->Height), 
         0.1f, 100.0f);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
     ResourceManager::GetShader("shader").Use();
-    ResourceManager::GetShader("shader").SetMatrix4("projection", projection);
+    
+    // ResourceManager::GetShader("shader").SetMatrix4("projection", projection);
     //ResourceManager::GetShader("shader").SetVector2f("u_resolution", Width, Height);
 
     ResourceManager::GetShader("raymarching").Use();
