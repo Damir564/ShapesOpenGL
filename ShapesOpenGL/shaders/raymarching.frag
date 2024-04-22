@@ -16,6 +16,19 @@
 
 #define FOV float(1.2)
 
+#define MAX_NUM_TOTAL_CUBOIDS 1
+
+struct Cuboid
+{
+    vec3 pos;
+    vec3 size;
+};
+
+layout (std140) uniform CuboidBlock
+{
+    Cuboid cuboids[MAX_NUM_TOTAL_CUBOIDS];
+};
+
 out vec4 FragColor;
 
 // * camera info
@@ -57,13 +70,75 @@ vec2 ballSdf(in vec3 uv) {
     return vec2(length(uv - ball) - r, 1.);
 }
 
-float sdBox( vec3 p, vec3 b )
+// rot & translate
+
+mat2 rotate(float angle)
 {
-  vec3 pos = vec3(3.0, 0.0, 0.0);
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat2(c, -s, s, c);
+}
+
+mat3 rotateX(float angle)
+{
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat3(
+        1.0, 0.0, 0.0,
+        0.0, c, -s,
+        0.0, s, c
+    );
+}
+
+mat3 rotateY(float angle)
+{
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat3(
+        c, -s, 0.0,
+        s, c, 0.0,
+        0.0, 0.0, 1.0
+    );
+}
+
+mat3 rotateZ(float angle)
+{
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat3(
+        c, -s, 0.0,
+        s, c, 0.0,
+        0.0, 0.0, 1.0
+    );
+}
+
+vec3 translate(vec3 p, vec3 offset)
+{
+    return p - offset;
+}
+
+// =====
+
+float sdBox( vec3 p, vec3 pos, vec3 b )
+{
+  // vec3 pos = vec3(0.0, 0.0, 0.0);
   vec3 q = abs(p - pos) - b;
   return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
 }
 
+float sdRotatedBox(vec3 p, vec3 pos, vec3 size, vec3 angles)
+{
+    p = translate(p, pos);
+
+    // p.xy = rotate(angle) * p.xy;
+    p = rotateX(angles.x) * p;
+    p = rotateY(angles.y) * p;
+    p = rotateZ(angles.z) * p;
+
+    p = translate(p, -pos);
+
+    return sdBox(p, pos, size);
+}
 
 float sdSphere( vec3 p, float s )
 {
@@ -100,12 +175,16 @@ vec2 sceneSdf(in vec3 uv) {
 float sdScene(in vec3 p)
 {
     //float s = sdSphere(p, 1);
-    float e = sdbEllipsoidV2(p, vec3(2.0, 1.0, 1.0));
-    float b = sdBox(p, vec3(1.0, 1.0, 1.0));
-    float intersection = opIntersection(e, b);
+    //float e = sdbEllipsoidV2(p, vec3(2.0, 1.0, 1.0));
+    // float b = sdBox(p, vec3(3.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0));
+    float b = sdBox(p, cuboids[0].pos, cuboids[0].size);
+    // float b = sdRotatedBox(p, vec3(3.0, 0.0, 0.0)
+    // , vec3(1.0, 1.0, 1.0)
+    // , vec3(radians(0.0), radians(0.0), radians(0.0)));
+    // float intersection = opIntersection(e, b);
     //return intersection;
-    if (e < b)
-        return e;
+    //if (e < b)
+   //     return e;
     return b;
 }
 
@@ -136,8 +215,8 @@ void main()
     //vec2 uv = (2.0 * gl_FragCoord.xy - uResolution.xy) / uResolution.y;
     vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
     vec3 eye = uCameraPosition;
-    // float d = 1.0 / tan(radians(40.0f));
-    vec3 projection = normalize(vec3(uv.x, uv.y, FOV));
+    float d = 1.0 / tan(radians(80.0f) / 2.0);
+    vec3 projection = normalize(vec3(uv.x, uv.y, d));
     vec3 target = uCameraPosition + uCameraFront;
     float roll = 0.0;
     // mat3 L = uView.xyz;

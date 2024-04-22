@@ -8,6 +8,12 @@
 
 // class VAO;
 
+struct CuboidStruct
+{
+	glm::vec3 position;
+	glm::vec3 size;
+};
+
 class Cuboid : public Shape
 {
 public:

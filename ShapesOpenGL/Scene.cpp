@@ -24,36 +24,47 @@ glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 Scene::Scene(unsigned int width, unsigned int height) : Width(width), Height(height), Keys(), KeysProcessed(), Cuboids() {}
 
+
+
 void Scene::Init()
 {
     ResourceManager::LoadShader("shaders/shader.vert", "shaders/shader.frag", nullptr, "shader");
     ResourceManager::LoadShader("shaders/raymarching.vert", "shaders/raymarching.frag", nullptr, "raymarching");
 
-    GLuint uniformBlockIndex = 
-        glGetUniformBlockIndex(ResourceManager::GetShader("shader").ID, "Matrices");
+    //GLuint uniformBlockIndex = 
+    //    glGetUniformBlockIndex(ResourceManager::GetShader("shader").ID, "Matrices");
+    //
+    //glUniformBlockBinding(ResourceManager::GetShader("shader").ID
+    //    , uniformBlockIndex
+    //    , 0);
+    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(3.0f, 0.0f, 0.0f)
+        , glm::vec3(2.0f, 2.0f, 2.0f)
+        , glm::vec3(0.0f, 0.0f, 0.0f)
+        , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
     
-    glUniformBlockBinding(ResourceManager::GetShader("shader").ID
-        , uniformBlockIndex
-        , 0);
 
-    GLuint uboMatrices;
-    glGenBuffers(1, &uboMatrices);
+    
 
-    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-    glBufferData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 1 * sizeof(glm::mat4));
-
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 
-        static_cast<float>(this->Width) / static_cast<float>(this->Height), 
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+        static_cast<float>(this->Width) / static_cast<float>(this->Height),
         0.1f, 100.0f);
-    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    ResourceManager::GetShader("shader").Use();
+    //ResourceManager::GetShader("shader").Use();
+    //GLuint uboMatrices;
+    //glGenBuffers(1, &uboMatrices);
+
+    //glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    //glBufferData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+    //glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    //glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 1 * sizeof(glm::mat4));
+
+    //
+    //glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    //glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+    //glBindBuffer(GL_UNIFORM_BUFFER, 0);
+     ResourceManager::GetShader("shader").Use();
     
-    // ResourceManager::GetShader("shader").SetMatrix4("projection", projection);
+     ResourceManager::GetShader("shader").SetMatrix4("projection", projection);
     //ResourceManager::GetShader("shader").SetVector2f("u_resolution", Width, Height);
 
     ResourceManager::GetShader("raymarching").Use();
@@ -65,10 +76,7 @@ void Scene::Init()
     //    , glm::vec3(1.0f, 1.0f, 1.0f)
     //    , glm::vec3(0.0f, 0.0f, 0.0f)
     //    , glm::vec4(1.0f, 0.0f, 0.0f, 1.0f))));
-    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(3.0f, 0.0f, 0.0f)
-        , glm::vec3(2.0f, 2.0f, 2.0f)
-        , glm::vec3(0.0f, 0.0f, 0.0f)
-        , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
+   
 
     //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, 0.0f) 
     //    , glm::vec3(2.0f, 2.0f, 2.0f)
@@ -117,6 +125,10 @@ void Scene::Init()
         std::cout << "framebuffer error" << fboStatus << std::endl;
 
     ScreenQuad = std::make_unique<Quad>(Quad());
+
+
+
+
 }
 
 void Scene::ProcessInput(float dt)
@@ -276,14 +288,58 @@ void Scene::Render()
     } 
     for (std::unique_ptr<Cuboid> const& cuboid : Cuboids)
     {
+        //ResourceManager::GetShader("shader").Use();
         if (cuboid->isWired)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         if (cuboid->isDrawn)
             cuboid->Draw(ResourceManager::GetShader("shader").Use());
-    }
+        CuboidStruct cuboidStructs[1];
+        cuboidStructs[0].position = cuboid->transform.Position;
+        cuboidStructs[0].size = cuboid->transform.Size;
+        GLuint ubo;
+        ResourceManager::GetShader("raymarching").Use();
+        glGenBuffers(1, &ubo);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(CuboidStruct) * 1, &cuboidStructs[0], GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+        // glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        GLuint blockIndex =
+            glGetUniformBlockIndex(
+                ResourceManager::GetShader("raymarching").ID
+                , "CuboidBlock");
+        glUniformBlockBinding(
+            ResourceManager::GetShader("raymarching").ID
+            , blockIndex
+            , 0);
+        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
+       // glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, 1 * sizeof(CuboidStruct));
 
+       //glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+
+        void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+        if (ptr)
+        {
+            std::cout << "gererf\n";
+            memcpy(ptr, &cuboidStructs[0], sizeof(CuboidStruct) * 1);
+            glUnmapBuffer(GL_UNIFORM_BUFFER);
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        //ResourceManager::GetShader("raymarching").Use();
+        //glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        //cuboidStructs[0].position = cuboid->transform.Position;
+        //cuboidStructs[0].size = cuboid->transform.Size;
+        //void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+        //if (ptr)
+        //{
+        //    memcpy(ptr, &cuboidStructs[0], sizeof(CuboidStruct) * 1);
+        //    glUnmapBuffer(GL_UNIFORM_BUFFER);
+        //}
+        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+    //ResourceManager::GetShader("raymarching").Use();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     //if (_raymarching)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -79,6 +79,23 @@ void Cuboid::Draw(Shader& shader) const
     model = glm::scale(model, transform.Size); // last scale
     //collider->ApplyModelMat4(model);
     collider->ApplyTransform(transform);
+    //std::cout << model[0][0] << "\t";
+    //std::cout << model[0][1] << "\t";
+    //std::cout << model[0][2] << "\t";
+    //std::cout << model[0][3] << "\n";
+    //std::cout << model[1][0] << "\t";
+    //std::cout << model[1][1] << "\t";
+    //std::cout << model[1][2] << "\t";
+    //std::cout << model[1][3] << "\n";
+    //std::cout << model[2][0] << "\t";
+    //std::cout << model[2][1] << "\t";
+    //std::cout << model[2][2] << "\t";
+    //std::cout << model[2][3] << "\n";
+    //std::cout << model[3][0] << "\t";
+    //std::cout << model[3][1] << "\t";
+    //std::cout << model[3][2] << "\t";
+    //std::cout << model[3][3] << "\n";
+    //std::cout << "=========\n";
 
     shader.SetMatrix4("model", model);
     shader.SetVector4f("color", color);
@@ -87,5 +104,7 @@ void Cuboid::Draw(Shader& shader) const
     vao->Bind();
     glDrawElements(GL_TRIANGLES, 6 * 2 * 3, GL_UNSIGNED_INT, nullptr);
     vao->Unbind();
+
+
 }
 
