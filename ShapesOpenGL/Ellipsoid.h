@@ -7,6 +7,12 @@
 #include "MeshCollider.h"
 #include "Shape.h"
 
+struct EllipsoidStruct
+{
+	glm::vec3 position;
+	glm::vec4 size;
+};
+
 class Ellipsoid : public Shape
 {
 public:

@@ -11,7 +11,7 @@
 struct CuboidStruct
 {
 	glm::vec3 position;
-	glm::vec3 size;
+	glm::vec4 size;
 };
 
 class Cuboid : public Shape

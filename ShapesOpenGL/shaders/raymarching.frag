@@ -1,6 +1,7 @@
 #version 460 core
 
 #define LIGHT_CHECKER  vec3(1., 0.8, 0.)
+#define INTERSECTION_COLOR  vec3(1., 0.8, 0.8)
 #define DARK_CHECKER   vec3(0., 0.5, 0.)
 #define ZERO_CHECKER vec3(1., 0., 0.)
 #define SKY vec3(1., 1., 1.)
@@ -11,23 +12,39 @@
 #define PLANE_POS -1.
 
 #define MAX_STEPS 100
+#define MIN_STEP 0.01
+#define STEP_SIZE 0.1
 #define MAX_DIST 100.
+#define MIN_DIST 0.01
 #define CLOSENESS 0.01
 
 #define FOV float(1.2)
 
-#define MAX_NUM_TOTAL_CUBOIDS 1
+#define NUM_ELLIPSOIDS 1
+#define NUM_CUBOIDS 1
+
+struct Ellipsoid
+{
+    vec3 pos;
+    vec4 size;
+};
+
+layout (std140) uniform EllipsoidBlock
+{
+    Ellipsoid ellipsoids[NUM_ELLIPSOIDS];
+} ellipsoid_block;
+
 
 struct Cuboid
 {
     vec3 pos;
-    vec3 size;
+    vec4 size;
 };
 
 layout (std140) uniform CuboidBlock
 {
-    Cuboid cuboids[MAX_NUM_TOTAL_CUBOIDS];
-};
+    Cuboid cuboids[NUM_CUBOIDS];
+} cuboid_block;
 
 out vec4 FragColor;
 
@@ -146,9 +163,8 @@ float sdSphere( vec3 p, float s )
     return length(p - pos)-s;
 }
 
-float sdbEllipsoidV2( in vec3 p, in vec3 r )
+float sdbEllipsoidV2( in vec3 p, in vec3 pos, in vec3 r )
 {
-    vec3 pos = vec3(1.0, 0.0, 0.0);
     p -= pos;
     float k1 = length(p/r);
     float k2 = length(p/(r*r));
@@ -158,6 +174,11 @@ float sdbEllipsoidV2( in vec3 p, in vec3 r )
 float opIntersection( float d1, float d2 )
 {
     return max(d1,d2);
+}
+
+float opUnion( float d1, float d2 )
+{
+    return min(d1,d2);
 }
 
 
@@ -172,31 +193,116 @@ vec2 sceneSdf(in vec3 uv) {
   // return b;
 }
 
-float sdScene(in vec3 p)
+float sdScene(in vec3 p, out vec3 resColor)
 {
-    //float s = sdSphere(p, 1);
-    //float e = sdbEllipsoidV2(p, vec3(2.0, 1.0, 1.0));
-    // float b = sdBox(p, vec3(3.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0));
-    float b = sdBox(p, cuboids[0].pos, cuboids[0].size);
-    // float b = sdRotatedBox(p, vec3(3.0, 0.0, 0.0)
-    // , vec3(1.0, 1.0, 1.0)
-    // , vec3(radians(0.0), radians(0.0), radians(0.0)));
-    // float intersection = opIntersection(e, b);
-    //return intersection;
+    //resColor = LIGHT_CHECKER;
+    //float e = sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[0].pos, ellipsoid_block.ellipsoids[0].size.xyz / 2.0);
+    //float b = sdBox(p, cuboid_block.cuboids[0].pos, cuboid_block.cuboids[0].size.xyz / 2.0);
+    //float intersection = opIntersection(e, b);
     //if (e < b)
-   //     return e;
-    return b;
+    //    return e;
+    //return b;
+    // Initialize color
+    // Define colors for individual shapes
+    vec3 shapeColors[2];
+    shapeColors[0] = vec3(1.0, 0.0, 0.0); // Red for ellipsoids
+    shapeColors[1] = vec3(0.0, 1.0, 0.0); // Green for cuboids
+
+    // Initialize distance and intersection variables
+    float minDist = MAX_DIST;
+    float intersection = MAX_DIST;
+    int closestShapeIndex = -1; // Index of the closest shape
+
+    // Loop through ellipsoids
+    for (int i = 0; i < NUM_ELLIPSOIDS; i++) {
+        float dist = sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[i].pos, ellipsoid_block.ellipsoids[i].size.xyz / 2.0);
+        minDist = min(minDist, dist);
+    }
+
+    // Loop through cuboids
+    for (int j = 0; j < NUM_CUBOIDS; j++) {
+        float dist = sdBox(p, cuboid_block.cuboids[j].pos, cuboid_block.cuboids[j].size.xyz / 2.0);
+        minDist = min(minDist, dist);
+    }
+
+    // Loop through intersections between shapes
+    for (int i = 0; i < NUM_ELLIPSOIDS; i++) {
+        for (int j = 0; j < NUM_CUBOIDS; j++) {
+            float dist = opUnion(sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[i].pos, ellipsoid_block.ellipsoids[i].size.xyz / 2.0),
+                                 sdBox(p, cuboid_block.cuboids[j].pos, cuboid_block.cuboids[j].size.xyz / 2.0));
+            intersection = min(intersection, dist);
+        }
+    }
+
+    // If intersection is closer than individual shapes
+    if (intersection < minDist) {
+        resColor = vec3(0.0, 0.0, 1.0); // Blue for intersection
+        // return intersection;
+   }
+
+    // Loop through individual shapes to assign colors
+    for (int i = 0; i < NUM_ELLIPSOIDS; i++) {
+        float dist = sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[i].pos, ellipsoid_block.ellipsoids[i].size.xyz / 2.0);
+        if (dist == minDist) {
+            if (resColor != vec3(0.0, 0.0, 1.0))
+                resColor = shapeColors[0];
+            return minDist;
+        }
+    }
+
+    for (int j = 0; j < NUM_CUBOIDS; j++) {
+        float dist = sdBox(p, cuboid_block.cuboids[j].pos, cuboid_block.cuboids[j].size.xyz / 2.0);
+        if (dist == minDist) {
+            if (resColor != vec3(0.0, 0.0, 1.0))
+                resColor = shapeColors[1];
+            return minDist;
+        }
+    }
+
+    // No shapes found, assign background color
+    resColor = vec3(0.5, 0.5, 0.5); // Gray background
+    return minDist;
+    
 }
 
-float rayMarch(vec3 origin, vec3 direction) {
-    float dist = 0.;
-    for(int i=0; i < MAX_STEPS; ++i) {
-        vec3 ray = origin + direction * dist;
-        // float step = sceneSdf(ray).x;
-        float step = sdScene(ray);
-        dist += step;
-        if (step < CLOSENESS || dist > MAX_DIST) break;
+float rayMarch(vec3 origin, vec3 direction, out vec3 resColor) {
+    //float dist = 0.;
+    //resColor = LIGHT_CHECKER;
+    //for(int i=0; i < MAX_STEPS; ++i) {
+     //   vec3 ray = origin + direction * dist;
+     //   // float step = sceneSdf(ray).x;
+     //   float step = sdScene(ray, resColor);
+     //   dist += step;
+    //    if (step < CLOSENESS || dist > MAX_DIST) break;
+    //}
+    //return min(dist, MAX_DIST);
+
+    vec3 color = vec3(0.0); // Accumulated color
+    float alpha = 0.0; // Accumulated alpha
+    float dist = 0;
+    for (int i = 0; i < MAX_STEPS; ++i)
+    {
+        vec3 ray = origin + direction * MIN_STEP * float(i);
+
+        // Calculate signed distance
+        dist = sdScene(ray, color);
+
+        // Early termination if we're close enough to a surface
+        if (dist < MIN_DIST)
+        {
+            alpha = 1.0;
+            break;
+        }
+
+        // Accumulate color and alpha
+        alpha += (1.0 - alpha) * STEP_SIZE * dist;
+        color += (1.0 - alpha) * alpha * resColor;
+
+        // Terminate if accumulated alpha is close to 1
+        if (alpha > 0.99)
+            break;
     }
+    resColor = color;
     return min(dist, MAX_DIST);
 }
 
@@ -222,13 +328,15 @@ void main()
     // mat3 L = uView.xyz;
     mat3 L = calcLookAtMatrix(eye, target, roll);
 
+    vec3 color = LIGHT_CHECKER;
     vec3 ro = eye;
     vec3 rd = normalize(L * projection);
-    float dist = rayMarch(ro, rd);
+    float dist = rayMarch(ro, rd, color);
     vec3 ray = ro + rd * dist;
     float skyMix = smoothstep(MAX_DIST * 0.6, MAX_DIST * 0.8, dist);
-    vec3 color = checker(ray.xz, 1.0); //* smoothstep(16., 0., ray.y);
+    // vec3 color = checker(ray.xz, 1.0); //* smoothstep(16., 0., ray.y);
     vec3 final = mix(color, SKY, skyMix);
+    // final = color;
     // vec3 col;
     // render(col, uv);
 
