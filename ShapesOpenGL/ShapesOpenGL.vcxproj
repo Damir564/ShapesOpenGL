@@ -42,7 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="Collider.cpp" />
     <ClCompile Include="Ellipsoid.cpp" />
+    <ClCompile Include="GismosLine.cpp" />
     <ClCompile Include="GJK.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="MeshCollider.cpp" />
@@ -170,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="Collider.h" />
     <ClInclude Include="Ellipsoid.h" />
+    <ClInclude Include="GismosLine.h" />
     <ClInclude Include="GJK.h" />
     <ClInclude Include="MeshCollider.h" />
     <ClInclude Include="program.h" />

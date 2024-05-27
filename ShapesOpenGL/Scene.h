@@ -6,6 +6,7 @@
 #include "utilities/VAO.h"
 #include "Cuboid.h"
 #include "Ellipsoid.h"
+#include "GismosLine.h"
 #include "Quad.h"
 
 const float YAW = -90.0f;
@@ -55,6 +56,8 @@ public:
     GLuint ellipsoidVao;
     GLuint ellipsoidVbo[2];
 
+    std::vector<std::unique_ptr<CGismosLine>> GismosLines;
+    std::vector<std::unique_ptr<Cuboid>> GismosMarks;
     std::vector<std::unique_ptr<Cuboid>> Cuboids;
     std::vector<std::unique_ptr<Ellipsoid>> Ellipsoids;
     std::unique_ptr<Quad> ScreenQuad;

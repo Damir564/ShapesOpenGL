@@ -17,7 +17,9 @@
 #include "GJK.h"
 
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 30.0f);
+
+
+glm::vec3 cameraPos = glm::vec3(5.0f, 15.0f, 60.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -37,65 +39,51 @@ void Scene::Init()
     //glUniformBlockBinding(ResourceManager::GetShader("shader").ID
     //    , uniformBlockIndex
     //    , 0);
-    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(3.0f, 2.0f, 6.0f)
+
+    GismosLines.push_back(std::make_unique<CGismosLine>(CGismosLine(glm::vec3(1.0f, 0.0f, 0.0f))));
+    GismosLines.push_back(std::make_unique<CGismosLine>(CGismosLine(glm::vec3(0.0f, 1.0f, 0.0f))));
+    GismosLines.push_back(std::make_unique<CGismosLine>(CGismosLine(glm::vec3(0.0f, 0.0f, 1.0f))));
+
+    for (int i = 0; i != 100 / 2; ++i)
+    {
+        GismosMarks.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(i * 2.0f - 50.0f, 0.0f, 0.0f)
+            , glm::vec3(0.04f, 0.04f, 100.0f)
+            , glm::vec3(0.0f, 0.0f, 0.0f)
+            , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
+        GismosMarks.at(GismosMarks.size() - 1)->isWired = false;
+        GismosMarks.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, i * 2.0f - 50.0f)
+            , glm::vec3(100.0f, 0.04f, 0.04f)
+            , glm::vec3(0.0f, 0.0f, 0.0f)
+            , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
+        GismosMarks.at(GismosMarks.size() - 1)->isWired = false;
+        GismosMarks.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, i * 2.0f - 50.0f, 0.0f)
+            , glm::vec3(0.08f, 0.06f, 0.08f)
+            , glm::vec3(0.0f, 0.0f, 0.0f)
+            , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
+        GismosMarks.at(GismosMarks.size() - 1)->isWired = false;
+        //Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(i * 2.0f, 0.0f, 0.0f)
+        //    , glm::vec3(0.2f, 0.2f, 0.2f)
+        //    , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
+        //    , glm::vec4(-0.5f, -0.5f, -0.5f, 2.0f))));
+        //Ellipsoids.at(Ellipsoids.size() - 1)->isWired = false;
+    }
+
+    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(10.0f, 20.0f, 6.0f)
         , glm::vec3(2.0f, 5.0f, 10.0f)
         , glm::vec3(0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
-    
-
-    
 
     glm::mat4 projection = glm::perspective(glm::radians(45.0f),
         static_cast<float>(this->Width) / static_cast<float>(this->Height),
         0.1f, 100.0f);
-    //ResourceManager::GetShader("shader").Use();
-    //GLuint uboMatrices;
-    //glGenBuffers(1, &uboMatrices);
-
-    //glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-    //glBufferData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
-    //glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    //glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 1 * sizeof(glm::mat4));
-
-    //
-    //glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-    //glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
-    //glBindBuffer(GL_UNIFORM_BUFFER, 0);
      ResourceManager::GetShader("shader").Use();
     
      ResourceManager::GetShader("shader").SetMatrix4("projection", projection);
-    //ResourceManager::GetShader("shader").SetVector2f("u_resolution", Width, Height);
 
     ResourceManager::GetShader("raymarching").Use();
     ResourceManager::GetShader("raymarching").SetVector2f("uResolution", Width, Height);
 
-    
-
-    //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, 0.0f)
-    //    , glm::vec3(1.0f, 1.0f, 1.0f)
-    //    , glm::vec3(0.0f, 0.0f, 0.0f)
-    //    , glm::vec4(1.0f, 0.0f, 0.0f, 1.0f))));
-   
-
-    //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, 0.0f) 
-    //    , glm::vec3(2.0f, 2.0f, 2.0f)
-    //    , glm::vec3(0.0f, 0.0f, 0.0f)
-    //    , glm::vec4(1.0f, 0.0f, 0.0f, 1.0f))));
-    //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(2.0f, 0.0f, 0.0f)
-    //    , glm::vec3(2.0f, 2.0f, 2.0f)
-    //    , glm::vec3(0.0f, 0.0f, 0.0f)
-    //    , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
-    //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(0.0f, 0.0f, 2.0f)
-    //    , glm::vec3(2.0f, 2.0f, 2.0f)
-    //    , glm::vec3(0.0f, 0.0f, 0.0f)
-    //    , glm::vec4(0.0f, 0.0f, 1.0f, 1.0f))));
-    //Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(2.0f, 0.0f, 2.0f)
-    //    , glm::vec3(2.0f, 2.0f, 2.0f)
-    //    , glm::vec3(0.0f, 0.0f, 0.0f)
-    //    , glm::vec4(1.0f, 1.0f, 0.0f, 1.0f))));
-
-    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(1.0f, 0.0f, 0.0f)
+    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(0.0f, 0.0f, 0.0f)
         , glm::vec3(4.0f, 2.0f, 2.0f)
         // , glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f)
         , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
@@ -103,7 +91,6 @@ void Scene::Init()
 
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
 
     glGenTextures(1, &framebufferTexture);
     glBindTexture(GL_TEXTURE_2D, framebufferTexture);
@@ -125,10 +112,6 @@ void Scene::Init()
         std::cout << "framebuffer error" << fboStatus << std::endl;
 
     ScreenQuad = std::make_unique<Quad>(Quad());
-
-
-
-
 }
 
 void Scene::ProcessInput(float dt)
@@ -246,36 +229,10 @@ void Scene::Render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     
-
-    //for (const auto& a : Cuboids)
-    //{
-    //    a->collider->ApplyTransform(a->transform);
-    //}
     ResourceManager::GetShader("shader").Use();
     glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-    // glm::mat4 model = glm::mat4(1.0f);
     ResourceManager::GetShader("shader").SetMatrix4("view", view); // make sure to initialize matrix to identity matrix first
-    // ResourceManager::GetShader("shader").SetMatrix4("model", model);
-    //uint64_t ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-    //    std::chrono::system_clock::now().time_since_epoch()
-    //).count();
-    // std::cout << ms << std::endl;
     ResourceManager::GetShader("shader").SetFloat("time", glfwGetTime());// / (float)sizeof(uint64_t) * 20000.0f);
-    // std::cout << (float)(ms % 1000) / 1000.0f << std::endl;
-    //if (style == glObject::STYLE::WIREFRAME) 
-    
-    // glPolygonMode(GL_FRONT, GL_LINE);
-    //if (style == glObject::STYLE::SOLID)     
-    // glPolygonMode(GL_FRONT, GL_FILL);
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    //vaoVector[0].Bind();
-    //glDrawElements(GL_TRIANGLES, (slices * stacks + slices) * 3 * 2, GL_UNSIGNED_INT, nullptr);
-    //vaoVector[0].Unbind();
-
-    //vaoVector[0].Bind();
-    //glDrawElements(GL_TRIANGLES, 6 * 2 * 3, GL_UNSIGNED_INT, nullptr);
-    //vaoVector[0].Unbind();
 
     for (std::unique_ptr<Ellipsoid> const& ellipsoid : Ellipsoids)
     {
@@ -289,14 +246,12 @@ void Scene::Render()
         EllipsoidStruct ellipsoidStructs[1];
         ellipsoidStructs[0].size = glm::vec4(0.0, ellipsoid->transform.Size.x, ellipsoid->transform.Size.y, ellipsoid->transform.Size.z);
         ellipsoidStructs[0].position = ellipsoid->transform.Position;
-        // std::cout << "X: " << ellipsoidStructs[0].size.x << " Y: " << ellipsoidStructs[0].size.y << "Z: " << ellipsoidStructs[0].size.z << "\n";
         GLuint ubo;
         ResourceManager::GetShader("raymarching").Use();
         glGenBuffers(1, &ubo);
         glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * 1, &ellipsoidStructs[0], GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo);
-        // glBindBuffer(GL_UNIFORM_BUFFER, 0);
         GLuint blockIndex =
             glGetUniformBlockIndex(
                 ResourceManager::GetShader("raymarching").ID
@@ -305,24 +260,17 @@ void Scene::Render()
             ResourceManager::GetShader("raymarching").ID
             , blockIndex
             , 1);
-        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
-       // glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, 1 * sizeof(EllipsoidStruct));
-
-       //glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 
         void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
         if (ptr)
         {
-            // std::cout << "gererf\n";
             memcpy(ptr, &ellipsoidStructs[0], sizeof(EllipsoidStruct) * 1);
             glUnmapBuffer(GL_UNIFORM_BUFFER);
         }
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
     } 
     for (std::unique_ptr<Cuboid> const& cuboid : Cuboids)
     {
-        //ResourceManager::GetShader("shader").Use();
         if (cuboid->isWired)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else
@@ -332,14 +280,12 @@ void Scene::Render()
         CuboidStruct cuboidStructs[1];
         cuboidStructs[0].size = glm::vec4(0.0, cuboid->transform.Size.x, cuboid->transform.Size.y, cuboid->transform.Size.z);
         cuboidStructs[0].position = cuboid->transform.Position;
-        // std::cout << "X: " << cuboidStructs[0].size.x << " Y: " << cuboidStructs[0].size.y << "Z: " << cuboidStructs[0].size.z << "\n";
         GLuint ubo;
         ResourceManager::GetShader("raymarching").Use();
         glGenBuffers(1, &ubo);
         glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(CuboidStruct) * 1, &cuboidStructs[0], GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
-        // glBindBuffer(GL_UNIFORM_BUFFER, 0);
         GLuint blockIndex =
             glGetUniformBlockIndex(
                 ResourceManager::GetShader("raymarching").ID
@@ -348,42 +294,38 @@ void Scene::Render()
             ResourceManager::GetShader("raymarching").ID
             , blockIndex
             , 0);
-        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
-       // glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, 1 * sizeof(CuboidStruct));
-
-       //glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 
         void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
         if (ptr)
         {
-            // std::cout << "gererf\n";
             memcpy(ptr, &cuboidStructs[0], sizeof(CuboidStruct) * 1);
             glUnmapBuffer(GL_UNIFORM_BUFFER);
         }
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-        
-        //ResourceManager::GetShader("raymarching").Use();
-        //glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-        //cuboidStructs[0].position = cuboid->transform.Position;
-        //cuboidStructs[0].size = cuboid->transform.Size;
-        //void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-        //if (ptr)
-        //{
-        //    memcpy(ptr, &cuboidStructs[0], sizeof(CuboidStruct) * 1);
-        //    glUnmapBuffer(GL_UNIFORM_BUFFER);
-        //}
-        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
-    //ResourceManager::GetShader("raymarching").Use();
+
+    for (std::unique_ptr<CGismosLine> const& gismosLine : GismosLines)
+    {
+        if (gismosLine->isWired)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        if (gismosLine->isDrawn)
+            gismosLine->Draw(ResourceManager::GetShader("shader").Use());
+    }
+
+    for (std::unique_ptr<Cuboid> const& gismosMark : GismosMarks)
+    {
+        if (gismosMark->isWired)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        if (gismosMark->isDrawn)
+            gismosMark->Draw(ResourceManager::GetShader("shader").Use());
+    }
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    //if (_raymarching)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // std::cout << "X: " << cameraYaw << " Y: " << cameraPitch << "\n";
     ScreenQuad->Draw(ResourceManager::GetShader("raymarching").Use(), FBO);
-    //ResourceManager::GetShader("raymarching").SetFloat("u_time", glfwGetTime());
-    // ResourceManager::GetShader("raymarching").SetVector3f("uResolution", cameraPos);
-    // std::cout << "X: " << cameraPos.x << " Y: " << cameraPos.y << "Z: " << cameraPos.z << "\n";
     glm::quat cameraQuaternion = glm::vec3(0, 0, 0);
     cameraQuaternion = glm::rotate(cameraQuaternion, glm::radians(cameraPitch), glm::vec3(0, 1, 0));
     cameraQuaternion = glm::rotate(cameraQuaternion, glm::radians(cameraYaw), glm::vec3(1, 0, 0));
@@ -395,11 +337,6 @@ void Scene::Render()
     ResourceManager::GetShader("raymarching").SetMatrix4("uView", view);
     ResourceManager::GetShader("raymarching").SetVector3f("uCameraPosition", cameraPos);
     ResourceManager::GetShader("raymarching").SetVector3f("uCameraFront", cameraFront);
-
-    
-
-    
-    // glBindVertexArray(0);
 }
 
 void Scene::UI()
@@ -417,16 +354,12 @@ void Scene::UI()
         ImGui::Text("Cuboid: ");
         std::string idSuffix = (std::string("##cuboid") + std::to_string(i)).c_str();
         ImGui::Checkbox(std::format("Draw{0}", idSuffix).c_str(), &Cuboids[i]->isDrawn);
-        ImGui::Checkbox(std::format("Wired{0}", idSuffix).c_str(), &Cuboids[i]->isWired);
         ImGui::SliderFloat(std::format("position x{0}", idSuffix).c_str(), &Cuboids[i]->transform.Position.x, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("position y{0}", idSuffix).c_str(), &Cuboids[i]->transform.Position.y, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("position z{0}", idSuffix).c_str(), &Cuboids[i]->transform.Position.z, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("size x{0}", idSuffix).c_str(), &Cuboids[i]->transform.Size.x, 0.0f, 20.0f);
         ImGui::SliderFloat(std::format("size y{0}", idSuffix).c_str(), &Cuboids[i]->transform.Size.y, 0.0f, 20.0f);
         ImGui::SliderFloat(std::format("size z{0}", idSuffix).c_str(), &Cuboids[i]->transform.Size.z, 0.0f, 20.0f);
-        ImGui::SliderFloat(std::format("Rotation x{0}", idSuffix).c_str(), &Cuboids[i]->transform.Rotation.x, -180.0f, 180.0f);
-        ImGui::SliderFloat(std::format("Rotation y{0}", idSuffix).c_str(), &Cuboids[i]->transform.Rotation.y, -180.0f, 180.0f);
-        ImGui::SliderFloat(std::format("Rotation z{0}", idSuffix).c_str(), &Cuboids[i]->transform.Rotation.z, -180.0f, 180.0f);
     }
     // Slider that appears in the window
     for (size_t i = 0; i != Ellipsoids.size(); ++i)
@@ -434,20 +367,12 @@ void Scene::UI()
         ImGui::Text("Ellipsoid: ");
         std::string idSuffix = (std::string("##ellipsoid") + std::to_string(i)).c_str();
         ImGui::Checkbox(std::format("Draw{0}", idSuffix).c_str(), &Ellipsoids[i]->isDrawn);
-        ImGui::Checkbox(std::format("Wired{0}", idSuffix).c_str(), &Ellipsoids[i]->isWired);
         ImGui::SliderFloat(std::format("position x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Position.x, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("position y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Position.y, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("position z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Position.z, -20.0f, 20.0f);
         ImGui::SliderFloat(std::format("size x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.x, 0.0f, 20.0f);
         ImGui::SliderFloat(std::format("size y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.y, 0.0f, 20.0f);
         ImGui::SliderFloat(std::format("size z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Size.z, 0.0f, 20.0f);
-        ImGui::SliderFloat(std::format("Rotation x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Rotation.x, -180.0f, 180.0f);
-        ImGui::SliderFloat(std::format("Rotation y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Rotation.y, -180.0f, 180.0f);
-        ImGui::SliderFloat(std::format("Rotation z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Rotation.z, -180.0f, 180.0f);
-        //ImGui::SliderFloat(std::format("quaternion w{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Quaternion.w, -1.0f, 1.0f);
-        //ImGui::SliderFloat(std::format("quaternion x{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Quaternion.x, -1.0f, 1.0f);
-        //ImGui::SliderFloat(std::format("quaternion y{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Quaternion.y, -1.0f, 1.0f);
-        //ImGui::SliderFloat(std::format("quaternion z{0}", idSuffix).c_str(), &Ellipsoids[i]->transform.Quaternion.z, -1.0f, 1.0f);
     }
     //// Fancy color editor that appears in the window
     //ImGui::ColorEdit4("Color", color);
