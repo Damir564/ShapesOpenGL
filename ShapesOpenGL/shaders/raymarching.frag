@@ -22,7 +22,7 @@
 
 #define FOV float(1.2)
 
-#define NUM_ELLIPSOIDS 2
+#define NUM_ELLIPSOIDS 3
 #define NUM_CUBOIDS 1
 
 #define MAX_NUM_ELLIPSOIDS 100
@@ -33,10 +33,11 @@ vec3 shapeColors[NUM_ELLIPSOIDS + NUM_CUBOIDS];
 struct Ellipsoid
 {
     vec3 pos;
+    float padding03;
     vec4 size;
 };
 
-layout (std140) uniform EllipsoidBlock
+layout (std140, binding = 0) uniform EllipsoidBlock
 {
     Ellipsoid ellipsoids[MAX_NUM_ELLIPSOIDS];
 } ellipsoid_block;
@@ -45,10 +46,11 @@ layout (std140) uniform EllipsoidBlock
 struct Cuboid
 {
     vec3 pos;
+    float padding03;
     vec4 size;
 };
 
-layout (std140) uniform CuboidBlock
+layout (std140, binding = 1) uniform CuboidBlock
 {
     Cuboid cuboids[MAX_NUM_CUBOIDS];
 } cuboid_block;
@@ -259,7 +261,6 @@ float sdScene(in vec3 p, out vec3 resColor)
             }
         }
     }
-
     if (intersection != MAX_DIST)
     {
         resColor = shapeColors[intersectionShapeIndex];

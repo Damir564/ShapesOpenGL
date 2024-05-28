@@ -62,7 +62,13 @@ public:
     std::vector<std::unique_ptr<Ellipsoid>> Ellipsoids;
     std::unique_ptr<Quad> ScreenQuad;
 
-    EllipsoidStruct EllipsoidStructs[100];
+    EllipsoidStruct EllipsoidBlock[100];
+    GLuint uboEllipsoids;
+    GLuint uniformBlockIndexEllipsoids;
+
+    CuboidStruct CuboidBlock[100];
+    GLuint uboCuboids;
+    GLuint uniformBlockIndexCuboids;
 
 	Scene(unsigned int width, unsigned int height);
     void Init();

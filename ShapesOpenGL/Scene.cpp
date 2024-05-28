@@ -93,17 +93,45 @@ void Scene::Init()
         , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
 
+    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(-4.0f, 0.0f, 0.0f)
+        , glm::vec3(4.0f, 2.0f, 2.0f)
+        // , glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f)
+        , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
+        , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
+
     Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(10.0f, 2.0f, 2.0f)
         , glm::vec3(2.0f, 5.0f, 10.0f)
         , glm::vec3(0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
 
-    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(10.0f, 2.0f, 2.0f)
+    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(5.0f, 2.0f, 2.0f)
         , glm::vec3(2.0f, 5.0f, 10.0f)
         , glm::vec3(0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 1.0f, 1.0f, 1.0f))));
 
-    
+    uniformBlockIndexEllipsoids = glGetUniformBlockIndex(ResourceManager::GetShader("raymarching").ID, "EllipsoidBlock");
+    uniformBlockIndexCuboids = glGetUniformBlockIndex(ResourceManager::GetShader("raymarching").ID, "CuboidBlock");
+
+    //glUniformBlockBinding(ResourceManager::GetShader("raymarching").ID, uniformBlockIndexEllipsoids, 0);
+    //glUniformBlockBinding(ResourceManager::GetShader("raymarching").ID, uniformBlockIndexCuboids, 0);
+
+    //for (int i = 0; i != 100; ++i)
+    //{
+    //    EllipsoidBlock[i] = EllipsoidStruct();
+    //}
+
+    glGenBuffers(1, &uboEllipsoids);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboEllipsoids);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * 100, NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, uboEllipsoids);
+    // glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboEllipsoids, 0, sizeof(EllipsoidBlock));
+
+    glGenBuffers(1, &uboCuboids);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboCuboids);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(CuboidBlock), NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, uboCuboids);
 
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -249,6 +277,7 @@ void Scene::Render()
     glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     ResourceManager::GetShader("shader").SetMatrix4("view", view); // make sure to initialize matrix to identity matrix first
 
+    int i = 0;
     for (std::unique_ptr<Ellipsoid> const& ellipsoid : Ellipsoids)
     {
         if (ellipsoid->isWired)
@@ -258,32 +287,24 @@ void Scene::Render()
         if (ellipsoid->isDrawn)
             ellipsoid->Draw(ResourceManager::GetShader("shader").Use());       
 
-        EllipsoidStruct ellipsoidStructs[1];
-        ellipsoidStructs[0].size = glm::vec4(0.0, ellipsoid->transform.Size.x, ellipsoid->transform.Size.y, ellipsoid->transform.Size.z);
-        ellipsoidStructs[0].position = ellipsoid->transform.Position;
-        GLuint ubo;
-        ResourceManager::GetShader("raymarching").Use();
-        glGenBuffers(1, &ubo);
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * 1, &ellipsoidStructs[0], GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo);
-        GLuint blockIndex =
-            glGetUniformBlockIndex(
-                ResourceManager::GetShader("raymarching").ID
-                , "EllipsoidBlock");
-        glUniformBlockBinding(
-            ResourceManager::GetShader("raymarching").ID
-            , blockIndex
-            , 1);
-
-        void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-        if (ptr)
-        {
-            memcpy(ptr, &ellipsoidStructs[0], sizeof(EllipsoidStruct) * 1);
-            glUnmapBuffer(GL_UNIFORM_BUFFER);
-        }
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        // EllipsoidStruct ellipsoidStructs[1];
+        EllipsoidStruct temp = { .position = ellipsoid->transform.Position
+            , .size = glm::vec4(0.0, ellipsoid->transform.Size.x, ellipsoid->transform.Size.y, ellipsoid->transform.Size.z) };
+        EllipsoidBlock[i] = temp;
+        i++;
     } 
+    int numEllipsoids = i;
+    i = 0;
+    ResourceManager::GetShader("raymarching").Use();
+    for (int i = 0; i != numEllipsoids; ++i)
+    {
+        glBindBuffer(GL_UNIFORM_BUFFER, uboEllipsoids);
+        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * i, sizeof(EllipsoidBlock), &EllipsoidBlock[i]);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+    //glBindBuffer(GL_UNIFORM_BUFFER, uboEllipsoids);
+    //glBufferData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * 100, EllipsoidBlock, GL_DYNAMIC_DRAW);
+    //glBindBuffer(GL_UNIFORM_BUFFER, 0);
     for (std::unique_ptr<Cuboid> const& cuboid : Cuboids)
     {
         if (cuboid->isWired)
@@ -292,32 +313,15 @@ void Scene::Render()
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         if (cuboid->isDrawn)
             cuboid->Draw(ResourceManager::GetShader("shader").Use());
-        CuboidStruct cuboidStructs[1];
-        cuboidStructs[0].size = glm::vec4(0.0, cuboid->transform.Size.x, cuboid->transform.Size.y, cuboid->transform.Size.z);
-        cuboidStructs[0].position = cuboid->transform.Position;
-        GLuint ubo;
-        ResourceManager::GetShader("raymarching").Use();
-        glGenBuffers(1, &ubo);
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(CuboidStruct) * 1, &cuboidStructs[0], GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
-        GLuint blockIndex =
-            glGetUniformBlockIndex(
-                ResourceManager::GetShader("raymarching").ID
-                , "CuboidBlock");
-        glUniformBlockBinding(
-            ResourceManager::GetShader("raymarching").ID
-            , blockIndex
-            , 0);
-
-        void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-        if (ptr)
-        {
-            memcpy(ptr, &cuboidStructs[0], sizeof(CuboidStruct) * 1);
-            glUnmapBuffer(GL_UNIFORM_BUFFER);
-        }
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        CuboidStruct temp = { .position = cuboid->transform.Position
+            , .size = glm::vec4(0.0, cuboid->transform.Size.x, cuboid->transform.Size.y, cuboid->transform.Size.z) };
+        CuboidBlock[i] = temp;
+        i++;
     }
+    glBindBuffer(GL_UNIFORM_BUFFER, uboCuboids);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(CuboidBlock), &CuboidBlock, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    int numCuboids = i;
 
     for (std::unique_ptr<CGismosLine> const& gismosLine : GismosLines)
     {
