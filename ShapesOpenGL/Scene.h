@@ -53,14 +53,16 @@ public:
     GLuint framebufferTexture;
     GLuint RBO;
 
-    GLuint ellipsoidVao;
-    GLuint ellipsoidVbo[2];
+    // GLuint ellipsoidVao;
+    // GLuint ellipsoidVbo[2];
 
     std::vector<std::unique_ptr<CGismosLine>> GismosLines;
     std::vector<std::unique_ptr<Cuboid>> GismosMarks;
     std::vector<std::unique_ptr<Cuboid>> Cuboids;
     std::vector<std::unique_ptr<Ellipsoid>> Ellipsoids;
     std::unique_ptr<Quad> ScreenQuad;
+
+    EllipsoidStruct EllipsoidStructs[100];
 
 	Scene(unsigned int width, unsigned int height);
     void Init();

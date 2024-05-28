@@ -68,10 +68,7 @@ void Scene::Init()
         //Ellipsoids.at(Ellipsoids.size() - 1)->isWired = false;
     }
 
-    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(10.0f, 20.0f, 6.0f)
-        , glm::vec3(2.0f, 5.0f, 10.0f)
-        , glm::vec3(0.0f, 0.0f, 0.0f)
-        , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
+    
 
     glm::mat4 projection = glm::perspective(glm::radians(45.0f),
         static_cast<float>(this->Width) / static_cast<float>(this->Height),
@@ -82,12 +79,31 @@ void Scene::Init()
 
     ResourceManager::GetShader("raymarching").Use();
     ResourceManager::GetShader("raymarching").SetVector2f("uResolution", Width, Height);
+    // ResourceManager::GetShader("raymarching").SetFloat("uTime", glfwGetTime());
 
     Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(0.0f, 0.0f, 0.0f)
         , glm::vec3(4.0f, 2.0f, 2.0f)
         // , glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f)
         , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
+
+    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(4.0f, 0.0f, 0.0f)
+        , glm::vec3(4.0f, 2.0f, 2.0f)
+        // , glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f)
+        , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
+        , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
+
+    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(10.0f, 2.0f, 2.0f)
+        , glm::vec3(2.0f, 5.0f, 10.0f)
+        , glm::vec3(0.0f, 0.0f, 0.0f)
+        , glm::vec4(0.0f, 1.0f, 0.0f, 1.0f))));
+
+    Cuboids.push_back(std::make_unique<Cuboid>(Cuboid(glm::vec3(10.0f, 2.0f, 2.0f)
+        , glm::vec3(2.0f, 5.0f, 10.0f)
+        , glm::vec3(0.0f, 0.0f, 0.0f)
+        , glm::vec4(0.0f, 1.0f, 1.0f, 1.0f))));
+
+    
 
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -232,7 +248,6 @@ void Scene::Render()
     ResourceManager::GetShader("shader").Use();
     glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     ResourceManager::GetShader("shader").SetMatrix4("view", view); // make sure to initialize matrix to identity matrix first
-    ResourceManager::GetShader("shader").SetFloat("time", glfwGetTime());// / (float)sizeof(uint64_t) * 20000.0f);
 
     for (std::unique_ptr<Ellipsoid> const& ellipsoid : Ellipsoids)
     {

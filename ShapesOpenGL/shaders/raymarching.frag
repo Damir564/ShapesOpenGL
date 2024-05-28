@@ -5,6 +5,8 @@
 #define DARK_CHECKER   vec3(0., 0.5, 0.)
 #define ZERO_CHECKER vec3(1., 0., 0.)
 #define SKY vec3(1., 1., 1.)
+#define COLOR_ELLIPSOID vec3(1.0, 0.0, 0.0)
+#define COLOR_CUBOID vec3(0.0, 1.0, 0.0)
 //#define SKY vec3(0., 0., 0.)
 #define AA  2
 #define AAR 0.5
@@ -20,8 +22,13 @@
 
 #define FOV float(1.2)
 
-#define NUM_ELLIPSOIDS 1
+#define NUM_ELLIPSOIDS 2
 #define NUM_CUBOIDS 1
+
+#define MAX_NUM_ELLIPSOIDS 100
+#define MAX_NUM_CUBOIDS 100
+
+vec3 shapeColors[NUM_ELLIPSOIDS + NUM_CUBOIDS];
 
 struct Ellipsoid
 {
@@ -31,7 +38,7 @@ struct Ellipsoid
 
 layout (std140) uniform EllipsoidBlock
 {
-    Ellipsoid ellipsoids[NUM_ELLIPSOIDS];
+    Ellipsoid ellipsoids[MAX_NUM_ELLIPSOIDS];
 } ellipsoid_block;
 
 
@@ -43,7 +50,7 @@ struct Cuboid
 
 layout (std140) uniform CuboidBlock
 {
-    Cuboid cuboids[NUM_CUBOIDS];
+    Cuboid cuboids[MAX_NUM_CUBOIDS];
 } cuboid_block;
 
 out vec4 FragColor;
@@ -193,27 +200,30 @@ vec2 sceneSdf(in vec3 uv) {
   // return b;
 }
 
+float rnd(float i) {
+	return mod(4000.*sin(23464.345*i+45.345),1.);
+}
+
 float sdScene(in vec3 p, out vec3 resColor)
 {
     // Initialize color
     // Define colors for individual shapes
-    vec3 shapeColors[2];
-    shapeColors[0] = vec3(1.0, 0.0, 0.0); // Red for ellipsoids
-    shapeColors[1] = vec3(0.0, 1.0, 0.0); // Green for cuboids
-
+    for (int i = 0; i < NUM_ELLIPSOIDS + NUM_CUBOIDS; i++) {
+        if (i < NUM_ELLIPSOIDS)
+            shapeColors[i] = COLOR_ELLIPSOID;
+        else
+            shapeColors[i] = COLOR_CUBOID;
+    }
     float shapeDistances[NUM_ELLIPSOIDS + NUM_CUBOIDS];
     for (int i = 0; i < NUM_ELLIPSOIDS + NUM_CUBOIDS; i++) {
         shapeDistances[i] = MAX_DIST;
     }
-
     // Initialize distance and intersection variables
     float minDist = MAX_DIST;
     float intersection = MAX_DIST;
-    // float uni = MIN_DIST;
+    float nextIntersection = MAX_DIST;
+    int intersectionShapeIndex = -1;
     int closestShapeIndex = -1; // Index of the closest shape
-        // Loop through cuboids
-
-
     // Loop through ellipsoids
    for (int i = 0; i < NUM_ELLIPSOIDS; i++) {
         float dist = sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[i].pos, ellipsoid_block.ellipsoids[i].size.xyz / 2.0);
@@ -225,8 +235,7 @@ float sdScene(in vec3 p, out vec3 resColor)
         }
         shapeDistances[i] = dist;
     }
-
-        for (int j = 0; j < NUM_CUBOIDS; j++) {
+    for (int j = 0; j < NUM_CUBOIDS; j++) {
         float dist = sdBox(p, cuboid_block.cuboids[j].pos, cuboid_block.cuboids[j].size.xyz / 2.0);
         if (dist < minDist)
         {
@@ -236,16 +245,24 @@ float sdScene(in vec3 p, out vec3 resColor)
         }
         shapeDistances[NUM_ELLIPSOIDS + j] = dist;
     }
-
-    // uni = opUnion(shapeDistances[0], shapeDistances[1]);// - opIntersection(shapeDistances[0], shapeDistances[1]);
-    intersection = opIntersection(shapeDistances[0], shapeDistances[1]);
+    // intersection = opIntersection(shapeDistances[0], shapeDistances[1]);
+    if (NUM_ELLIPSOIDS + NUM_CUBOIDS > 1)
+    {
+        //intersection = shapeDistances[0];
+        //intersectionShapeIndex = 0;
+        for (int i = 0; i < NUM_ELLIPSOIDS + NUM_CUBOIDS; i++)
+        {
+            if (shapeDistances[i] > intersection && shapeDistances[i] != MAX_DIST || intersection == MAX_DIST) 
+            {
+                intersection = shapeDistances[i];
+                intersectionShapeIndex = i;
+            }
+        }
+    }
 
     if (intersection != MAX_DIST)
     {
-        if (intersection == shapeDistances[0])
-            resColor = shapeColors[0];
-        else if (intersection == shapeDistances[1])
-            resColor = shapeColors[1];
+        resColor = shapeColors[intersectionShapeIndex];
         return intersection;
     }
     else
@@ -304,6 +321,7 @@ mat3 calcLookAtMatrix(vec3 origin, vec3 target, float roll) {
 
 void main()
 {
+
     vec4 diffuseColor = texture(screenTexture, texCoords);
     vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
     vec3 eye = uCameraPosition;
