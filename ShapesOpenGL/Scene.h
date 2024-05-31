@@ -62,7 +62,7 @@ public:
     std::vector<std::unique_ptr<Ellipsoid>> Ellipsoids;
     std::unique_ptr<Quad> ScreenQuad;
 
-    EllipsoidStruct EllipsoidBlock[100];
+    EllipsoidStruct EllipsoidsTransform[100];
     GLuint uboEllipsoids;
     GLuint uniformBlockIndexEllipsoids;
 

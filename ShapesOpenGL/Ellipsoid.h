@@ -9,7 +9,7 @@
 
 struct EllipsoidStruct
 {
-	glm::vec3 position;
+	glm::vec4 position;
 	glm::vec4 size;
 };
 

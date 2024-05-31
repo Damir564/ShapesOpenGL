@@ -76,6 +76,7 @@ void Scene::Init()
      ResourceManager::GetShader("shader").Use();
     
      ResourceManager::GetShader("shader").SetMatrix4("projection", projection);
+     
 
     ResourceManager::GetShader("raymarching").Use();
     ResourceManager::GetShader("raymarching").SetVector2f("uResolution", Width, Height);
@@ -87,14 +88,14 @@ void Scene::Init()
         , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
 
-    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(4.0f, 0.0f, 0.0f)
-        , glm::vec3(4.0f, 2.0f, 2.0f)
+    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(1.0f, 2.0f, 0.0f)
+        , glm::vec3(4.0f, 5.0f, 2.0f)
         // , glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f)
         , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
 
-    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(-4.0f, 0.0f, 0.0f)
-        , glm::vec3(4.0f, 2.0f, 2.0f)
+    Ellipsoids.push_back(std::make_unique<Ellipsoid>(Ellipsoid(glm::vec3(-2.0f, 0.0f, 0.0f)
+        , glm::vec3(1.0f, 2.0f, 10.0f)
         // , glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f)
         , glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
         , glm::vec4(0.0f, 0.0f, 0.0f, 0.2f))));
@@ -124,14 +125,14 @@ void Scene::Init()
     glBindBuffer(GL_UNIFORM_BUFFER, uboEllipsoids);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * 100, NULL, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, uboEllipsoids);
-    // glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboEllipsoids, 0, sizeof(EllipsoidBlock));
+    // glBindBufferBase(GL_UNIFORM_BUFFER, 1, uboEllipsoids);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 1, uboEllipsoids, 0, sizeof(EllipsoidStruct) * 100);
 
     glGenBuffers(1, &uboCuboids);
     glBindBuffer(GL_UNIFORM_BUFFER, uboCuboids);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(CuboidBlock), NULL, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, uboCuboids);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, uboCuboids);
 
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -277,6 +278,7 @@ void Scene::Render()
     glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     ResourceManager::GetShader("shader").SetMatrix4("view", view); // make sure to initialize matrix to identity matrix first
 
+    glLineWidth(1.0f);
     int i = 0;
     for (std::unique_ptr<Ellipsoid> const& ellipsoid : Ellipsoids)
     {
@@ -288,23 +290,31 @@ void Scene::Render()
             ellipsoid->Draw(ResourceManager::GetShader("shader").Use());       
 
         // EllipsoidStruct ellipsoidStructs[1];
-        EllipsoidStruct temp = { .position = ellipsoid->transform.Position
-            , .size = glm::vec4(0.0, ellipsoid->transform.Size.x, ellipsoid->transform.Size.y, ellipsoid->transform.Size.z) };
-        EllipsoidBlock[i] = temp;
+        EllipsoidStruct temp = { .position = glm::vec4(ellipsoid->transform.Position, 1.0f)
+            , .size = glm::vec4(ellipsoid->transform.Size, 1.0f) };
+        EllipsoidsTransform[i] = temp;
         i++;
     } 
     int numEllipsoids = i;
     i = 0;
     ResourceManager::GetShader("raymarching").Use();
-    for (int i = 0; i != numEllipsoids; ++i)
-    {
-        glBindBuffer(GL_UNIFORM_BUFFER, uboEllipsoids);
-        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * i, sizeof(EllipsoidBlock), &EllipsoidBlock[i]);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    }
+    glBindBuffer(GL_UNIFORM_BUFFER, uboEllipsoids);
+    //for (int i = 0; i != numEllipsoids; ++i)
+    //{
+    //    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * i * 2, sizeof(glm::vec4), &EllipsoidsTransform[i].position);
+    //    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * i * 2 + sizeof(glm::vec4), sizeof(glm::vec4), &EllipsoidsTransform[i].size);
+    //    // std::cout << EllipsoidsTransform[i].position.x << " " << EllipsoidsTransform[i].position.y << " " << EllipsoidsTransform[i].position.z << "value pos\n";
+    //    // std::cout << EllipsoidsTransform[i].size.x << " " << EllipsoidsTransform[i].size.y << " " << EllipsoidsTransform[i].size.z << "value size\n\n";
+    //}
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * 100, EllipsoidsTransform, GL_DYNAMIC_DRAW);
+
+    // glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(EllipsoidStruct) * 100, EllipsoidsTransform);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    // std::cout << "end\n\n\n" << std::endl;
     //glBindBuffer(GL_UNIFORM_BUFFER, uboEllipsoids);
-    //glBufferData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * 100, EllipsoidBlock, GL_DYNAMIC_DRAW);
+    //glBufferData(GL_UNIFORM_BUFFER, sizeof(EllipsoidStruct) * 100, EllipsoidsTransform, GL_DYNAMIC_DRAW);
     //glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glLineWidth(1.5f);
     for (std::unique_ptr<Cuboid> const& cuboid : Cuboids)
     {
         if (cuboid->isWired)

@@ -13,7 +13,7 @@
 
 #define PLANE_POS -1.
 
-#define MAX_STEPS 100
+#define MAX_STEPS 500
 #define MIN_STEP 0.01
 #define STEP_SIZE 0.1
 #define MAX_DIST 100.
@@ -32,12 +32,14 @@ vec3 shapeColors[NUM_ELLIPSOIDS + NUM_CUBOIDS];
 
 struct Ellipsoid
 {
-    vec3 pos;
-    float padding03;
+    vec4 pos;
+    // float padding03;
     vec4 size;
+    // float padding;
+    // vec4 padding2;
 };
 
-layout (std140, binding = 0) uniform EllipsoidBlock
+layout (std140, binding = 1) uniform EllipsoidBlock
 {
     Ellipsoid ellipsoids[MAX_NUM_ELLIPSOIDS];
 } ellipsoid_block;
@@ -45,12 +47,13 @@ layout (std140, binding = 0) uniform EllipsoidBlock
 
 struct Cuboid
 {
-    vec3 pos;
-    float padding03;
+    vec4 pos;
+    // float padding03;
     vec4 size;
+    // float padding;
 };
 
-layout (std140, binding = 1) uniform CuboidBlock
+layout (std140, binding = 2) uniform CuboidBlock
 {
     Cuboid cuboids[MAX_NUM_CUBOIDS];
 } cuboid_block;
@@ -228,7 +231,7 @@ float sdScene(in vec3 p, out vec3 resColor)
     int closestShapeIndex = -1; // Index of the closest shape
     // Loop through ellipsoids
    for (int i = 0; i < NUM_ELLIPSOIDS; i++) {
-        float dist = sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[i].pos, ellipsoid_block.ellipsoids[i].size.xyz / 2.0);
+        float dist = sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[i].pos.xyz, ellipsoid_block.ellipsoids[i].size.xyz / 2.0);
         if (dist < minDist)
         {
             minDist = dist;
@@ -238,7 +241,7 @@ float sdScene(in vec3 p, out vec3 resColor)
         shapeDistances[i] = dist;
     }
     for (int j = 0; j < NUM_CUBOIDS; j++) {
-        float dist = sdBox(p, cuboid_block.cuboids[j].pos, cuboid_block.cuboids[j].size.xyz / 2.0);
+        float dist = sdBox(p, cuboid_block.cuboids[j].pos.xyz, cuboid_block.cuboids[j].size.xyz / 2.0);
         if (dist < minDist)
         {
             minDist = dist; 
@@ -247,6 +250,8 @@ float sdScene(in vec3 p, out vec3 resColor)
         }
         shapeDistances[NUM_ELLIPSOIDS + j] = dist;
     }
+    //resColor = shapeColors[3];
+    //return shapeDistances[3];
     // intersection = opIntersection(shapeDistances[0], shapeDistances[1]);
     if (NUM_ELLIPSOIDS + NUM_CUBOIDS > 1)
     {
