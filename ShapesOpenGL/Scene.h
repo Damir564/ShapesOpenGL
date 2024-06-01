@@ -66,7 +66,7 @@ public:
     GLuint uboEllipsoids;
     GLuint uniformBlockIndexEllipsoids;
 
-    CuboidStruct CuboidBlock[100];
+    CuboidStruct CuboidsTransform[100];
     GLuint uboCuboids;
     GLuint uniformBlockIndexCuboids;
 

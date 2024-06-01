@@ -22,13 +22,14 @@
 
 #define FOV float(1.2)
 
-#define NUM_ELLIPSOIDS 3
-#define NUM_CUBOIDS 1
+//#define NUM_ELLIPSOIDS 3
+// #define NUM_CUBOIDS 1
 
 #define MAX_NUM_ELLIPSOIDS 100
 #define MAX_NUM_CUBOIDS 100
 
-vec3 shapeColors[NUM_ELLIPSOIDS + NUM_CUBOIDS];
+vec3 shapeColors[MAX_NUM_ELLIPSOIDS + MAX_NUM_ELLIPSOIDS];
+float shapeDistances[MAX_NUM_ELLIPSOIDS + MAX_NUM_ELLIPSOIDS];
 
 struct Ellipsoid
 {
@@ -75,6 +76,8 @@ uniform sampler2D screenTexture;
 
 uniform vec2 uResolution;
 uniform float uTime;
+uniform int u_iCurrentEllipsoidsNum;
+uniform int u_iCurrentCuboidsNum;
 
 
 vec3 checker(in vec2 uv, in float size) {
@@ -213,24 +216,22 @@ float sdScene(in vec3 p, out vec3 resColor)
 {
     // Initialize color
     // Define colors for individual shapes
-    for (int i = 0; i < NUM_ELLIPSOIDS + NUM_CUBOIDS; i++) {
-        if (i < NUM_ELLIPSOIDS)
+    for (int i = 0; i < u_iCurrentEllipsoidsNum + u_iCurrentCuboidsNum; i++) {
+        if (i < u_iCurrentEllipsoidsNum)
             shapeColors[i] = COLOR_ELLIPSOID;
         else
             shapeColors[i] = COLOR_CUBOID;
     }
-    float shapeDistances[NUM_ELLIPSOIDS + NUM_CUBOIDS];
-    for (int i = 0; i < NUM_ELLIPSOIDS + NUM_CUBOIDS; i++) {
+    for (int i = 0; i <  u_iCurrentEllipsoidsNum + u_iCurrentCuboidsNum; i++) {
         shapeDistances[i] = MAX_DIST;
     }
     // Initialize distance and intersection variables
     float minDist = MAX_DIST;
-    float intersection = MAX_DIST;
-    float nextIntersection = MAX_DIST;
+    float intersection = MIN_DIST;
     int intersectionShapeIndex = -1;
     int closestShapeIndex = -1; // Index of the closest shape
     // Loop through ellipsoids
-   for (int i = 0; i < NUM_ELLIPSOIDS; i++) {
+  for (int i = 0; i < u_iCurrentEllipsoidsNum; i++) {
         float dist = sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[i].pos.xyz, ellipsoid_block.ellipsoids[i].size.xyz / 2.0);
         if (dist < minDist)
         {
@@ -240,44 +241,52 @@ float sdScene(in vec3 p, out vec3 resColor)
         }
         shapeDistances[i] = dist;
     }
-    for (int j = 0; j < NUM_CUBOIDS; j++) {
-        float dist = sdBox(p, cuboid_block.cuboids[j].pos.xyz, cuboid_block.cuboids[j].size.xyz / 2.0);
+    for (int i = 0; i < u_iCurrentCuboidsNum; i++) {
+        float dist = sdBox(p, cuboid_block.cuboids[i].pos.xyz, cuboid_block.cuboids[i].size.xyz / 2.0);
         if (dist < minDist)
         {
             minDist = dist; 
-            closestShapeIndex = NUM_ELLIPSOIDS + j;
+            closestShapeIndex = u_iCurrentEllipsoidsNum + i;
             
         }
-        shapeDistances[NUM_ELLIPSOIDS + j] = dist;
-    }
+        shapeDistances[u_iCurrentEllipsoidsNum + i] = dist;
+    } 
     //resColor = shapeColors[3];
     //return shapeDistances[3];
     // intersection = opIntersection(shapeDistances[0], shapeDistances[1]);
-    if (NUM_ELLIPSOIDS + NUM_CUBOIDS > 1)
+    if (u_iCurrentEllipsoidsNum + u_iCurrentCuboidsNum > 1)
     {
         //intersection = shapeDistances[0];
         //intersectionShapeIndex = 0;
-        for (int i = 0; i < NUM_ELLIPSOIDS + NUM_CUBOIDS; i++)
+        for (int i = 0; i < u_iCurrentEllipsoidsNum + u_iCurrentCuboidsNum; i++)
         {
-            if (shapeDistances[i] > intersection && shapeDistances[i] != MAX_DIST || intersection == MAX_DIST) 
+            //if (i < u_iCurrentEllipsoidsNum)
+            //    shapeDistances[i] = sdbEllipsoidV2(p, ellipsoid_block.ellipsoids[i].pos.xyz, ellipsoid_block.ellipsoids[i].size.xyz / 2.0);
+            //else
+            //    shapeDistances[i] = sdBox(p, cuboid_block.cuboids[i - u_iCurrentEllipsoidsNum].pos.xyz, cuboid_block.cuboids[i - u_iCurrentEllipsoidsNum].size.xyz / 2.0);
+            //if (shapeDistances[i] < minDist)
+            //{
+            //    minDist = shapeDistances[i]; 
+            //    closestShapeIndex = i;  
+            //}
+            //if (shapeDistances[i] >= MAX_DIST)
+            //{
+            //    resColor = vec3(1.0);
+            //    return shapeDistances[i];
+            //}
+            if (shapeDistances[i] > intersection) //&& shapeDistances[i] < MAX_DIST || intersection >= MAX_DIST) 
             {
                 intersection = shapeDistances[i];
                 intersectionShapeIndex = i;
             }
         }
     }
-    if (intersection != MAX_DIST)
+    if (intersectionShapeIndex != -1)
     {
         resColor = shapeColors[intersectionShapeIndex];
-        return intersection;
+        return shapeDistances[intersectionShapeIndex];
     }
-    else
-    {
-        resColor = vec3(0.0);
-        return min(shapeDistances[0], shapeDistances[1]);
-    }
-
-    resColor = vec3(0.0);
+    resColor = shapeColors[closestShapeIndex];
     return minDist;
     
 }
@@ -302,6 +311,7 @@ float rayMarch(vec3 origin, vec3 direction, out vec3 resColor) {
         }
         else if (abs(dist) > MAX_DIST)
         {
+        alpha = 1.0;
             //resColor = LIGHT_CHECKER;
             break;
         }
